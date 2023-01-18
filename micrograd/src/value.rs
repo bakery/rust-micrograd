@@ -1,13 +1,14 @@
+use serde::{Deserialize, Serialize};
 use std::{ops, vec};
 
-#[derive(Debug, Clone)]
-enum ValueOperation {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ValueOperation {
     Add,
     Multiply,
 }
 
-#[derive(Debug, Clone)]
-struct Value {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Value {
     data: f32,
     children: Vec<Value>,
     op: Option<ValueOperation>,
