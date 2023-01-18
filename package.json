@@ -4,6 +4,7 @@
   "description": "test",
   "main": "index.js",
   "scripts": {
+    "heroku-prebuild": "wasm-pack build ./micrograd --target web",
     "wasm": "wasm-pack build ./micrograd --target web",
     "dev": "vite",
     "build": "vite build"
