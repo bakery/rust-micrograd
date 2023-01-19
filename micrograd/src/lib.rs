@@ -24,21 +24,18 @@ pub fn greet() {
 
 #[wasm_bindgen]
 pub struct Playground {
-    value1: Value,
-    value2: Value,
+    values: Vec<Value>,
 }
 
 #[wasm_bindgen]
 impl Playground {
     pub fn new() -> Playground {
         Playground {
-            value1: Value::new(1.0),
-            value2: Value::new(2.0),
+            values: vec![Value::new(2.0) * Value::new(-3.0) + Value::new(10.0)],
         }
     }
 
-    pub fn getState(&self) -> Result<JsValue, JsValue> {
-        let state = vec![&self.value1, &self.value2];
-        Ok(serde_wasm_bindgen::to_value(&state)?)
+    pub fn get_state(&self) -> Result<JsValue, JsValue> {
+        Ok(serde_wasm_bindgen::to_value(&self.values)?)
     }
 }

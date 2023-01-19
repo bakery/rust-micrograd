@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/dagre": "^0.7.48",
     "@types/react": "^18.0.26",
     "@types/react-dom": "^18.0.10",
     "@vitejs/plugin-react": "^3.0.1",
@@ -19,7 +20,9 @@
     "vite-plugin-wasm-pack": "^0.1.12"
   },
   "dependencies": {
+    "dagre": "^0.8.5",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "reactflow": "^11.4.2"
   }
 }
