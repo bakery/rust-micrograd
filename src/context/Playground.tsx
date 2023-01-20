@@ -6,17 +6,17 @@ import {
   ReactNode,
 } from "react";
 import { Node, Edge } from "reactflow";
-import { Value, OpType } from "../data/value";
+import { Value } from "../data/value";
 import { Playground as PlaygroundBackend } from "micrograd";
 
+const edgeType = "smoothstep";
+
 interface Playground {
-  values: Value[];
   nodes: Node[];
   edges: Edge[];
 }
 
 const PlaygroundContext = createContext<Playground>({
-  values: [],
   nodes: [],
   edges: [],
 });
@@ -25,50 +25,10 @@ interface PlaygroundProviderProps {
   children: ReactNode;
 }
 
-const position = { x: 0, y: 0 };
-
 export const PlaygroundProvider = (props: PlaygroundProviderProps) => {
   const { children } = props;
-  const [values, setValues] = useState<Value[]>([]);
-  const [nodes, setNodes] = useState<Node[]>([
-    {
-      id: "1",
-      position,
-      type: "scalar",
-      data: {
-        value: -3.0,
-      },
-    },
-    {
-      id: "2",
-      position,
-      type: "scalar",
-      data: {
-        value: 2.0,
-      },
-    },
-    {
-      id: "3",
-      position,
-      type: "scalar",
-      data: {
-        value: -6.0,
-      },
-    },
-    {
-      id: "4",
-      position,
-      type: "operation",
-      data: {
-        operation: OpType.Multiply,
-      },
-    },
-  ]);
-  const [edges, setEdges] = useState<Edge[]>([
-    { id: "1-4", source: "1", target: "4" },
-    { id: "2-4", source: "2", target: "4" },
-    { id: "4-3", source: "4", target: "3" },
-  ]);
+  const [nodes, setNodes] = useState<Node[]>([]);
+  const [edges, setEdges] = useState<Edge[]>([]);
 
   useEffect(() => {
     const backend = PlaygroundBackend.new();
@@ -120,7 +80,9 @@ export const PlaygroundProvider = (props: PlaygroundProviderProps) => {
         position: { x: 0, y: 0 },
         type: "scalar",
         data: {
+          label: n.label,
           value: n.data,
+          grad: n.grad,
         },
       });
 
@@ -144,6 +106,8 @@ export const PlaygroundProvider = (props: PlaygroundProviderProps) => {
             id: `${c.id}-${opId}`,
             source: `${c.id}`,
             target: opId,
+            edgeType,
+            animated: true,
           });
         });
 
@@ -152,6 +116,8 @@ export const PlaygroundProvider = (props: PlaygroundProviderProps) => {
           id: `${opId}-${n.id}`,
           source: opId,
           target: `${n.id}`,
+          edgeType,
+          animated: true,
         });
       }
     });
@@ -170,7 +136,7 @@ export const PlaygroundProvider = (props: PlaygroundProviderProps) => {
   }, []);
 
   return (
-    <PlaygroundContext.Provider value={{ values, nodes, edges }}>
+    <PlaygroundContext.Provider value={{ nodes, edges }}>
       {children}
     </PlaygroundContext.Provider>
   );

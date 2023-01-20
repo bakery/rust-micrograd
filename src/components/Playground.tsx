@@ -1,11 +1,17 @@
 import "reactflow/dist/style.css";
 
-import ReactFlow, { Background, Node, Edge, Position } from "reactflow";
+import ReactFlow, {
+  Background,
+  Node,
+  Edge,
+  Position,
+  ConnectionLineType,
+} from "reactflow";
 import dagre from "dagre";
 import { usePlayground } from "../context/Playground";
 import { nodeTypes } from "./nodes";
 
-const nodeWidth = 172;
+const nodeWidth = 90;
 const nodeHeight = 36;
 
 const dagreGraph = new dagre.graphlib.Graph();
@@ -57,6 +63,8 @@ const Playground = () => {
 
   return (
     <ReactFlow
+      fitView
+      connectionLineType={ConnectionLineType.SmoothStep}
       nodeTypes={nodeTypes}
       nodes={layoutedNodes}
       edges={layoutedEdges}

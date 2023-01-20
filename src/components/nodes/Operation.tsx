@@ -17,13 +17,21 @@ const opTypeToString = (op: string): string => {
       return "+";
     case "Multiply":
       return "*";
+    case "Tanh":
+      return "tanh";
   }
 };
 
 export default memo((props: OperationNodeProps) => {
   const { data, isConnectable } = props;
   return (
-    <>
+    <div
+      style={{
+        backgroundColor: "yellow",
+        border: "solid 1px #ccc",
+        padding: "5px 10px",
+      }}
+    >
       <Handle
         type="target"
         position={Position.Left}
@@ -41,6 +49,6 @@ export default memo((props: OperationNodeProps) => {
         style={{ bottom: 10, top: "auto", background: "#555" }}
         isConnectable={isConnectable}
       />
-    </>
+    </div>
   );
 });

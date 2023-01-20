@@ -5,7 +5,9 @@ export enum OpType {
 
 export interface Value {
   id: number;
+  label: string;
   data: number;
+  grad: number;
   children: Value[];
   op?: OpType;
 }

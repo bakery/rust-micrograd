@@ -3,6 +3,8 @@ import { Handle, Position } from "reactflow";
 
 interface ScalarNodeData {
   value: number;
+  grad: number;
+  label: string;
 }
 
 interface ScalarNodeProps {
@@ -10,10 +12,12 @@ interface ScalarNodeProps {
   isConnectable?: boolean;
 }
 
+const prettyNumber = (value: number): number => Math.round(value * 100) / 100;
+
 export default memo((props: ScalarNodeProps) => {
   const { data, isConnectable } = props;
   return (
-    <>
+    <div style={{ border: "solid 1px #ccc", padding: "10px" }}>
       <Handle
         type="target"
         position={Position.Left}
@@ -22,7 +26,9 @@ export default memo((props: ScalarNodeProps) => {
         isConnectable={isConnectable}
       />
       <div>
-        VALUE: <strong>{data.value}</strong>
+        <strong>{data.label}</strong>: {prettyNumber(data.value)}
+        <br />
+        <strong>grad</strong>: {prettyNumber(data.grad)}
       </div>
       <Handle
         type="source"
@@ -31,6 +37,6 @@ export default memo((props: ScalarNodeProps) => {
         style={{ bottom: 10, top: "auto", background: "#555" }}
         isConnectable={isConnectable}
       />
-    </>
+    </div>
   );
 });
