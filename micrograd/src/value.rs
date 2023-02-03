@@ -8,19 +8,26 @@ pub enum ValueOperation {
     Add,
     Multiply,
     Tanh,
+    Pow(u8),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Value {
-    id: usize,
-    label: String,
-    data: f32,
-    grad: f32,
-    children: Vec<Box<Value>>,
-    op: Option<ValueOperation>,
+    pub id: usize,
+    pub label: String,
+    pub data: f32,
+    pub grad: f32,
+    pub children: Vec<Box<Value>>,
+    pub op: Option<ValueOperation>,
 }
 
-fn tanh(x: f32) -> f32 {
+impl Drop for Value {
+    fn drop(&mut self) {
+        print!(">>>>>>>>>>>>> vLUE dropped")
+    }
+}
+
+pub fn tanh(x: f32) -> f32 {
     (f32::powf(E, 2.0 * x) - 1.0) / (f32::powf(E, 2.0 * x) + 1.0)
 }
 
@@ -37,6 +44,16 @@ impl Value {
         }
     }
 
+    pub fn adjust(&mut self, lr: f32) {
+        println!(
+            ">>>>>>> adjusting {} by {} with grad {}",
+            self.data,
+            -lr * self.grad,
+            self.grad
+        );
+        self.data += -lr * self.grad;
+    }
+
     pub fn set_label(&mut self, label: &str) {
         self.label = String::from(label);
     }
@@ -48,6 +65,17 @@ impl Value {
     pub fn tanh(self) -> Value {
         let mut result = Value::new(tanh(self.data), &format!("tanh({})", self.label));
         result.op = Some(ValueOperation::Tanh);
+        result.children = vec![Box::new(self)];
+
+        result
+    }
+
+    pub fn pow(self, n: u8) -> Value {
+        let mut result = Value::new(
+            f32::powi(self.data, n.into()),
+            &format!("{} ^ {}", self.label, n),
+        );
+        result.op = Some(ValueOperation::Pow(n));
         result.children = vec![Box::new(self)];
 
         result
@@ -92,6 +120,15 @@ impl Value {
                     // derivative of tanh: (1-tanh ^ 2)
                     self.children[0].set_grad(self.grad * (1.0 - tanh(val) * tanh(val)));
                 }
+                ValueOperation::Pow(n) => {
+                    assert!(self.children.len() == 1);
+
+                    let val = self.children[0].data;
+
+                    // derivate of x^n = n * x ^ (n-1)
+                    self.children[0]
+                        .set_grad(self.grad * (f32::from(*n) * f32::powi(val, (n - 1).into())))
+                }
             }
 
             for child in &mut self.children {
@@ -112,6 +149,17 @@ impl ops::Add<Value> for Value {
     }
 }
 
+impl ops::Add<Box<Value>> for Value {
+    type Output = Value;
+
+    fn add(self, rhs: Box<Value>) -> Self::Output {
+        let mut r = Value::new(self.data + rhs.data, "a");
+        r.children = vec![Box::new(self), rhs.clone()];
+        r.op = Some(ValueOperation::Add);
+        r
+    }
+}
+
 impl ops::Mul<Value> for Value {
     type Output = Value;
 
@@ -120,6 +168,57 @@ impl ops::Mul<Value> for Value {
         r.children = vec![Box::new(self), Box::new(rhs)];
         r.op = Some(ValueOperation::Multiply);
         r
+    }
+}
+
+impl ops::Mul<f32> for Value {
+    type Output = Value;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        let rhs_val = Value::new(rhs, "rhs_b");
+        let mut r = Value::new(self.data * rhs_val.data, "b");
+
+        r.children = vec![Box::new(self), Box::new(rhs_val)];
+        r.op = Some(ValueOperation::Multiply);
+        r
+    }
+}
+
+impl ops::Mul<Value> for Box<Value> {
+    type Output = Value;
+
+    fn mul(self, rhs: Value) -> Self::Output {
+        let mut r = Value::new(self.data * rhs.data, "b");
+        r.children = vec![self.clone(), Box::new(rhs)];
+        r.op = Some(ValueOperation::Multiply);
+        r
+    }
+}
+
+impl ops::Mul<Box<Value>> for Box<Value> {
+    type Output = Value;
+
+    fn mul(self, rhs: Box<Value>) -> Self::Output {
+        let mut r = Value::new(self.data * rhs.data, "b");
+        r.children = vec![self.clone(), rhs.clone()];
+        r.op = Some(ValueOperation::Multiply);
+        r
+    }
+}
+
+impl ops::Sub<f32> for Value {
+    type Output = Value;
+
+    fn sub(self, rhs: f32) -> Self::Output {
+        Value::new(-rhs, "sub") + self
+    }
+}
+
+impl ops::Sub<f32> for Box<Value> {
+    type Output = Value;
+
+    fn sub(self, rhs: f32) -> Self::Output {
+        Value::new(-rhs, "sub") + self.clone()
     }
 }
 
@@ -135,6 +234,14 @@ mod tests {
     }
 
     #[test]
+    fn test_adjust() {
+        let mut value = Value::new(1.0, "a");
+        value.grad = -0.3;
+        value.adjust(0.05);
+        assert_eq!(value.data, 1.0 + (-0.05 * value.grad));
+    }
+
+    #[test]
     fn test_addition() {
         let result = Value::new(1.0, "a") + Value::new(2.0, "b");
         assert_eq!(result.data, 3.0);
@@ -144,9 +251,19 @@ mod tests {
     }
 
     #[test]
+    fn test_subtraction() {
+        let result = Value::new(5.0, "a") - 6.0;
+        assert_eq!(result.data, -1.0);
+    }
+
+    #[test]
     fn test_multiplication() {
         let result = Value::new(2.0, "a") * Value::new(3.0, "b");
         assert_eq!(result.data, 6.0);
+        assert_eq!(result.children.len(), 2);
+
+        let result = result * 2.0;
+        assert_eq!(result.data, 12.0);
         assert_eq!(result.children.len(), 2);
     }
 
@@ -158,6 +275,13 @@ mod tests {
     }
 
     #[test]
+    fn test_pow() {
+        let result = Value::new(2.0, "a").pow(2);
+        assert_eq!(result.data, 4.0);
+        assert_eq!(result.label, "a ^ 2");
+    }
+
+    #[test]
     fn test_labels() {
         let mut l = Value::new(1.0, "L");
         assert_eq!(l.label, "L");
@@ -166,49 +290,96 @@ mod tests {
     }
 
     #[test]
-    fn test_backward() {
-        // let n = Value::new(0.8814, "n");
-        // let mut o = Value::tanh(n);
+    fn test_forward_and_backward() {
+        let x1 = Value::new(2.0, "x1");
+        let x2 = Value::new(0.0, "x2");
+        let w1 = Value::new(-3.0, "w1");
+        let w2 = Value::new(1.0, "w2");
+        let b = Value::new(6.8813735870195432, "b");
 
-        // o.set_grad(1.0);
-        // o.backward();
+        let mut x1_w1 = x1 * w1;
+        x1_w1.set_label("x1*w1");
 
-        // assert_eq!(o.children[0].grad, 0.4999814);
+        let mut x2_w2 = x2 * w2;
+        x2_w2.set_label("x2*w2");
 
-        // let mut z = Value::new(-6.0, "x") + Value::new(6.8814, "y");
+        let mut x1_w1_x2_w2 = x1_w1 + x2_w2;
+        x1_w1_x2_w2.set_label("x1*w1 + x2*w2");
 
-        // z.set_grad(0.5);
-        // z.backward();
+        let mut n = x1_w1_x2_w2 + b;
+        n.set_label("n");
 
-        // assert_eq!(z.children[0].grad, 0.5);
-        // assert_eq!(z.children[1].grad, 0.5);
+        let mut result = n.tanh();
 
-        // let mut x2_w2 = Value::new(0.0, "x2") * Value::new(1.0, "w2");
+        result.backward();
 
-        // x2_w2.set_grad(0.5);
-        // x2_w2.backward();
+        assert_eq!(result.data, 0.7071067);
+        assert_eq!(result.grad, 1.0);
 
-        // assert_eq!(x2_w2.children[0].grad, 0.5);
-        // assert_eq!(x2_w2.children[1].grad, 0.0);
+        assert_eq!(result.children[0].data, 0.8813734);
+        assert_eq!(result.children[0].grad, 0.5000001);
 
-        // ========================================
+        assert_eq!(result.children[0].children[0].data, -6.0);
+        assert_eq!(result.children[0].children[0].grad, 0.5000001);
 
-        // let x1 = Value::new(2.0, "x1");
-        // let x2 = Value::new(0.0, "x2");
-        // let w1 = Value::new(-3.0, "w1");
-        // let w2 = Value::new(1.0, "w2");
-        // let b = Value::new(6.8813735870195432, "b");
+        assert_eq!(result.children[0].children[1].data, 6.8813734);
+        assert_eq!(result.children[0].children[1].grad, 0.5000001);
 
-        // let mut x1_w1 = x1 * w1;
-        // x1_w1.set_label("x1*w1");
+        assert_eq!(result.children[0].children[0].children[0].data, -6.0);
+        assert_eq!(result.children[0].children[0].children[0].grad, 0.5000001);
 
-        // let mut x2_w2 = x2 * w2;
-        // x2_w2.set_label("x2*w2");
+        assert_eq!(result.children[0].children[0].children[1].data, 0.0);
+        assert_eq!(result.children[0].children[0].children[1].grad, 0.5000001);
 
-        // let mut x1_w1_x2_w2 = x1_w1 + x2_w2;
-        // x1_w1_x2_w2.set_label("x1*w1 + x2*w2");
+        assert_eq!(
+            result.children[0].children[0].children[0].children[0].data,
+            2.0
+        );
+        assert_eq!(
+            result.children[0].children[0].children[0].children[0].grad,
+            -1.5000004
+        );
 
-        // let mut n = x1_w1_x2_w2 + b;
-        // n.set_label("n");
+        assert_eq!(
+            result.children[0].children[0].children[0].children[1].data,
+            -3.0
+        );
+        assert_eq!(
+            result.children[0].children[0].children[0].children[1].grad,
+            1.0000002
+        );
+
+        assert_eq!(
+            result.children[0].children[0].children[1].children[0].data,
+            0.0
+        );
+        assert_eq!(
+            result.children[0].children[0].children[1].children[0].grad,
+            0.5000001
+        );
+
+        assert_eq!(
+            result.children[0].children[0].children[1].children[1].data,
+            1.0
+        );
+        assert_eq!(
+            result.children[0].children[0].children[1].children[1].grad,
+            0.0
+        );
     }
+
+    // XX: cannot do this with current implementation
+    // #[test]
+    // fn test_value_reuse() {
+    //     let a = Value::new(3.0, "a");
+    //     let mut b = a + a;
+
+    //     b.backward();
+
+    //     assert_eq!(b.data, 6.0);
+    //     assert_eq!(b.grad, 1.0);
+    //     assert_eq!(b.children.len(), 2);
+    //     assert_eq!(b.children[0].grad, 2.0);
+    //     assert_eq!(b.children[1].grad, 2.0);
+    // }
 }

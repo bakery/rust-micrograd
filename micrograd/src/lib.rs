@@ -1,8 +1,11 @@
+pub mod avalue;
+pub mod neuron;
 mod utils;
 pub mod value;
 
 use std::vec;
 
+use neuron::MLP;
 use value::Value;
 use wasm_bindgen::prelude::*;
 
@@ -30,41 +33,20 @@ pub struct Playground {
 #[wasm_bindgen]
 impl Playground {
     pub fn new() -> Playground {
-        // XX: initial example
-        // let a = Value::new(2.0, "a");
-        // let b = Value::new(-3.0, "b");
-        // let c = Value::new(10.0, "c");
-        // let mut e = a * b;
-        // e.set_label("e");
-        // let mut d = e + c;
-        // d.set_label("d");
-        // let f = Value::new(-2.0, "f");
-        // let mut l = d * f;
-        // l.set_label("L");
-        // Playground { values: vec![l] }
+        let network = MLP::default();
 
-        // XX: our first neuron
-        let x1 = Value::new(2.0, "x1");
-        let x2 = Value::new(0.0, "x2");
-        let w1 = Value::new(-3.0, "w1");
-        let w2 = Value::new(1.0, "w2");
-        let b = Value::new(6.8813735870195432, "b");
+        let prediction = network.forward(vec![
+            Box::new(Value::new(1.0, "x1")),
+            Box::new(Value::new(2.0, "x2")),
+            Box::new(Value::new(3.0, "x3")),
+        ]);
+        let target = 1.0;
 
-        let mut x1_w1 = x1 * w1;
-        x1_w1.set_label("x1*w1");
-
-        let mut x2_w2 = x2 * w2;
-        x2_w2.set_label("x2*w2");
-
-        let mut x1_w1_x2_w2 = x1_w1 + x2_w2;
-        x1_w1_x2_w2.set_label("x1*w1 + x2*w2");
-
-        let mut n = x1_w1_x2_w2 + b;
-        n.set_label("n");
+        let mut loss = MLP::loss(vec![target], prediction);
+        loss.backward();
 
         Playground {
-            values: serde_wasm_bindgen::to_value::<Vec<&Value>>(&vec![n.tanh().backward()])
-                .unwrap(),
+            values: serde_wasm_bindgen::to_value::<Vec<Box<Value>>>(&vec![Box::new(loss)]).unwrap(),
         }
     }
 
