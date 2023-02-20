@@ -414,7 +414,7 @@ mod tests {
                 loss = value!(0.0) + net.loss(targets[i].clone());
             }
 
-            println!("PARAMS: {:?}", net.params());
+            // println!("PARAMS: {:?}", net.params());
 
             loss.backward();
             net.adjust(0.05);
