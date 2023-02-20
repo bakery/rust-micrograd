@@ -297,14 +297,19 @@ impl ops::Mul<ValueRef> for ValueRef {
     }
 }
 
+impl ops::Mul<f32> for ValueRef {
+    type Output = ValueRef;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        self * value!(rhs)
+    }
+}
+
 impl ops::Sub<ValueRef> for ValueRef {
     type Output = ValueRef;
 
     fn sub(self, rhs: ValueRef) -> Self::Output {
-        let mut r = value!(self.data() - rhs.data());
-        r.set_children(vec![ValueRef::clone(&self), ValueRef::clone(&rhs)]);
-        r.set_op(Some(ValueOperation::Multiply));
-        r
+        self + rhs * (-1.0)
     }
 }
 
