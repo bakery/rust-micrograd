@@ -8,7 +8,7 @@ import ReactFlow, {
   ConnectionLineType,
 } from "reactflow";
 import dagre from "dagre";
-import { usePlayground } from "../context/Playground";
+import { usePlayground, PlaygroundPresets } from "../context/Playground";
 import { nodeTypes } from "./nodes";
 
 const nodeWidth = 90;
@@ -54,7 +54,7 @@ const getLayoutedElements = (
 };
 
 const Playground = () => {
-  const { nodes, edges } = usePlayground();
+  const { nodes, edges, loadPreset } = usePlayground();
 
   const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
     nodes,
@@ -62,15 +62,27 @@ const Playground = () => {
   );
 
   return (
-    <ReactFlow
-      fitView
-      connectionLineType={ConnectionLineType.SmoothStep}
-      nodeTypes={nodeTypes}
-      nodes={layoutedNodes}
-      edges={layoutedEdges}
-    >
-      <Background />
-    </ReactFlow>
+    <>
+      <select
+        onChange={(e) => {
+          loadPreset(parseInt(e.currentTarget.value) as PlaygroundPresets);
+        }}
+      >
+        <option>Pick preset</option>
+        <option value={PlaygroundPresets.BasicExpression}>Basic Example</option>
+        <option value={PlaygroundPresets.Neuron}>Neuron</option>
+        <option value={PlaygroundPresets.BasicMLP}>Basic MLP</option>
+      </select>
+      <ReactFlow
+        fitView
+        connectionLineType={ConnectionLineType.SmoothStep}
+        nodeTypes={nodeTypes}
+        nodes={layoutedNodes}
+        edges={layoutedEdges}
+      >
+        <Background />
+      </ReactFlow>
+    </>
   );
 };
 

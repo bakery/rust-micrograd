@@ -11,7 +11,8 @@ interface OperationNodeProps {
   isConnectable?: boolean;
 }
 
-const opTypeToString = (op: string): string => {
+const opTypeToString = (op: string | { Pow: number }): string => {
+  console.log(">>>>>>>>>>>>>>>> op iz", op);
   switch (op) {
     case "Add":
       return "+";
@@ -20,6 +21,12 @@ const opTypeToString = (op: string): string => {
     case "Tanh":
       return "tanh";
   }
+
+  if (typeof op.Pow !== "undefined") {
+    return "^2";
+  }
+
+  return "n/a";
 };
 
 export default memo((props: OperationNodeProps) => {

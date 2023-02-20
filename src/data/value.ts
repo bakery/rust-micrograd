@@ -8,6 +8,6 @@ export interface Value {
   label: string;
   data: number;
   grad: number;
-  children: Value[];
+  children: number[];
   op?: OpType;
 }
