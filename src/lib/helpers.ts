@@ -1,14 +1,20 @@
-import { Node, Edge } from "reactflow";
+import { Node, Edge, ConnectionLineType, Position } from "reactflow";
+import dagre from "dagre";
 import { Value } from "../data/value";
 
 interface NodesAndEdgesReturns {
   nodes: Node[];
   edges: Edge[];
+  depths: number[];
 }
 
-const edgeType = "smoothstep";
+const edgeType = ConnectionLineType.Straight; // "smoothstep";
 
-export const getNodesAndEdges = (state: Value[]) => {
+export const getNodesAndEdges = (
+  state: Value[],
+  currentDepth: number,
+  direction: "forward" | "backward"
+): NodesAndEdgesReturns => {
   const _getNodesAndEdges = (
     values: Value[]
   ): { nodes: Value[]; edges: Value[][] } => {
@@ -89,7 +95,7 @@ export const getNodesAndEdges = (state: Value[]) => {
           target: opId,
           // @ts-ignore
           edgeType,
-          animated: true,
+          animated: false,
         });
       });
 
@@ -100,13 +106,86 @@ export const getNodesAndEdges = (state: Value[]) => {
         target: `${n.id}`,
         // @ts-ignore
         edgeType,
-        animated: true,
+        animated: false,
       });
     }
   });
 
+  const {
+    edges: es,
+    nodes: ns,
+    depths,
+  } = getLayoutedElements(extendedNodes, extendedEdges);
+
+  const depthToUse =
+    depths.length !== 0 && currentDepth === 0 ? depths[0] : currentDepth;
+
   return {
-    nodes: extendedNodes,
-    edges: extendedEdges,
+    edges: es.map((e) => e),
+    nodes: ns.map((n) => {
+      // if this is not current depth
+
+      console.log(">>>>>>>>>>>>>> checking on node", n);
+
+      if (n.position.x === depthToUse) {
+        return Object.assign(n, {
+          data: Object.assign(n.data, { current: true }),
+        });
+      }
+
+      return n;
+    }),
+    depths,
+  };
+};
+
+const nodeWidth = 90;
+const nodeHeight = 36;
+
+const dagreGraph = new dagre.graphlib.Graph();
+dagreGraph.setDefaultEdgeLabel(() => ({}));
+
+const getLayoutedElements = (
+  nodes: Node[],
+  edges: Edge[],
+  direction = "LR"
+): NodesAndEdgesReturns => {
+  const isHorizontal = direction === "LR";
+  let depths = new Set();
+
+  dagreGraph.setGraph({ rankdir: direction });
+
+  nodes.forEach((node) => {
+    dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+  });
+
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(dagreGraph);
+
+  nodes.forEach((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id);
+
+    node.targetPosition = isHorizontal ? Position.Left : Position.Top;
+    node.sourcePosition = isHorizontal ? Position.Right : Position.Bottom;
+
+    // We are shifting the dagre node position (anchor=center center) to the top left
+    // so it matches the React Flow node anchor point (top left).
+    node.position = {
+      x: nodeWithPosition.x, // - nodeWidth / 2,
+      y: nodeWithPosition.y, // - nodeHeight / 2,
+    };
+
+    depths.add(nodeWithPosition.x);
+
+    return node;
+  });
+
+  return {
+    nodes,
+    edges,
+    depths: ([...depths] as number[]).sort((a: number, b: number) => a - b),
   };
 };
