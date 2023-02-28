@@ -9,6 +9,7 @@ const PlaybackControls = () => {
         CURRENT: {depths.current} ({depths.direction})
       </strong>
       <button
+        disabled={depths.direction === "forward"}
         onClick={() => {
           backward();
         }}
@@ -16,6 +17,7 @@ const PlaybackControls = () => {
         BACKWARD
       </button>
       <button
+        disabled={depths.direction === "backward"}
         onClick={() => {
           forward();
         }}

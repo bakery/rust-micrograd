@@ -4,6 +4,7 @@ import { OpType } from "../../data/value";
 
 interface OperationNodeData {
   operation: OpType;
+  current: boolean;
 }
 
 interface OperationNodeProps {
@@ -33,6 +34,11 @@ export default memo((props: OperationNodeProps) => {
   const { data, isConnectable } = props;
   return (
     <div
+      className={
+        data.current
+          ? "animate__animated animate__heartBeat animate__infinite	infinite animate__delay-2s"
+          : ""
+      }
       style={{
         backgroundColor: "yellow",
         border: "solid 1px #ccc",

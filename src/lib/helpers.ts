@@ -52,6 +52,8 @@ export const getNodesAndEdges = (
 
   const { nodes, edges } = _getNodesAndEdges(state);
 
+  console.log(">>>>>>>>>>>>>>>>> nodes are", nodes);
+
   const mapEdge = ([from, to]: [Value, Value]) => ({
     id: `${from.id}-${to.id}`,
     source: `${from.id}`,
@@ -70,6 +72,7 @@ export const getNodesAndEdges = (
         label: n.label.length < 5 ? n.label : "...",
         value: n.data,
         grad: n.grad,
+        isComputed: n.children.length !== 0,
       },
     });
 
@@ -118,22 +121,38 @@ export const getNodesAndEdges = (
   } = getLayoutedElements(extendedNodes, extendedEdges);
 
   const depthToUse =
-    depths.length !== 0 && currentDepth === 0 ? depths[0] : currentDepth;
+    direction === "forward"
+      ? depths.length !== 0 && currentDepth === 0
+        ? depths[0]
+        : currentDepth
+      : currentDepth;
 
   return {
     edges: es.map((e) => e),
     nodes: ns.map((n) => {
-      // if this is not current depth
+      console.log(
+        ">>>>>>>>>>>>>> checking on node",
+        n,
+        "with DEPTH",
+        depthToUse
+      );
 
-      console.log(">>>>>>>>>>>>>> checking on node", n);
-
-      if (n.position.x === depthToUse) {
-        return Object.assign(n, {
-          data: Object.assign(n.data, { current: true }),
-        });
-      }
-
-      return n;
+      return Object.assign(n, {
+        data: Object.assign(
+          n.data,
+          {
+            showGradient:
+              direction === "backward" && n.position.x >= depthToUse,
+          },
+          n.type === "scalar"
+            ? {
+                current: direction === "backward" || n.position.x <= depthToUse,
+              }
+            : {
+                current: direction === "forward" && n.position.x === depthToUse,
+              }
+        ),
+      });
     }),
     depths,
   };
@@ -152,6 +171,7 @@ const getLayoutedElements = (
 ): NodesAndEdgesReturns => {
   const isHorizontal = direction === "LR";
   let depths = new Set();
+  let maxDepth = 0;
 
   dagreGraph.setGraph({ rankdir: direction });
 
@@ -171,14 +191,21 @@ const getLayoutedElements = (
     node.targetPosition = isHorizontal ? Position.Left : Position.Top;
     node.sourcePosition = isHorizontal ? Position.Right : Position.Bottom;
 
-    // We are shifting the dagre node position (anchor=center center) to the top left
-    // so it matches the React Flow node anchor point (top left).
     node.position = {
-      x: nodeWithPosition.x, // - nodeWidth / 2,
-      y: nodeWithPosition.y, // - nodeHeight / 2,
+      x: nodeWithPosition.x,
+      y: nodeWithPosition.y,
     };
 
-    depths.add(nodeWithPosition.x);
+    // only track depths for ops
+    if (node.type === "operation") {
+      depths.add(nodeWithPosition.x);
+    }
+
+    // we also need to grab max depth of the graph
+    // which corresponds to the result of the expression
+    if (nodeWithPosition.x > maxDepth) {
+      maxDepth = nodeWithPosition.x;
+    }
 
     return node;
   });
@@ -186,6 +213,8 @@ const getLayoutedElements = (
   return {
     nodes,
     edges,
-    depths: ([...depths] as number[]).sort((a: number, b: number) => a - b),
+    depths: ([...depths, maxDepth] as number[]).sort(
+      (a: number, b: number) => a - b
+    ),
   };
 };

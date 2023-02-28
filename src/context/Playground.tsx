@@ -56,7 +56,11 @@ export const PlaygroundProvider = (props: PlaygroundProviderProps) => {
   });
   const backend = PlaygroundBackend.new();
 
-  const updateScene = (state: Value[], depths: DepthController) => {
+  const updateScene = (
+    state: Value[],
+    depths: DepthController,
+    resetDepth = false
+  ) => {
     const {
       nodes,
       edges,
@@ -65,7 +69,28 @@ export const PlaygroundProvider = (props: PlaygroundProviderProps) => {
 
     setNodes(nodes);
     setEdges(edges);
-    setDepths((ds) => Object.assign(ds, { values: depthsValues }));
+    setDepths((ds) => {
+      let currentDirection = ds.direction;
+
+      // start moving backwards if we reached the end
+      if (ds.direction === "forward") {
+        if (depths.current >= Math.max(...depthsValues)) {
+          currentDirection = "backward";
+        }
+      }
+      return Object.assign(
+        ds,
+        {
+          values: depthsValues,
+          direction: currentDirection,
+        },
+        resetDepth
+          ? {
+              current: depthsValues[0],
+            }
+          : {}
+      );
+    });
   };
 
   return (
@@ -92,7 +117,7 @@ export const PlaygroundProvider = (props: PlaygroundProviderProps) => {
         loadPreset: (preset) => {
           const s = backend.load_preset(preset);
           setState(s);
-          updateScene(s, depths);
+          updateScene(s, depths, true);
         },
       }}
     >
