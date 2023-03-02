@@ -7,7 +7,7 @@
 Reimplementing [Micrograd](https://github.com/karpathy/micrograd) in Rust. Based on [Andrej Karpathy's youtube series](https://www.youtube.com/watch?v=VMj-3S1tku0&t=1626s)
 </div>
 
-This is an attempt to implement [Micrograd](https://github.com/karpathy/micrograd) in Rust while preserving a friendly looking API. This ships with WebAssemlby bindings and a web based playgtound allowing to step through forward and back prop passes.
+This is an attempt to implement [Micrograd](https://github.com/karpathy/micrograd) in Rust while preserving a friendly looking API. This ships with WebAssemlby bindings and a web based playground allowing to step through forward and back prop passes.
 
 ## Rust API preview
 
