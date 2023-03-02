@@ -65,10 +65,15 @@ export const PlaygroundProvider = (props: PlaygroundProviderProps) => {
       nodes,
       edges,
       depths: depthsValues,
-    } = getNodesAndEdges(state, depths.current, depths.direction);
+    } = getNodesAndEdges(
+      state,
+      resetDepth ? 0 : depths.current,
+      resetDepth ? "forward" : depths.direction
+    );
 
     setNodes(nodes);
     setEdges(edges);
+
     setDepths((ds) => {
       let currentDirection = ds.direction;
 
@@ -87,6 +92,7 @@ export const PlaygroundProvider = (props: PlaygroundProviderProps) => {
         resetDepth
           ? {
               current: depthsValues[0],
+              direction: "forward",
             }
           : {}
       );

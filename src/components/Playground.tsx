@@ -1,34 +1,29 @@
 import "reactflow/dist/style.css";
 
-import ReactFlow, { Background, Node, Edge, Position } from "reactflow";
+import ReactFlow, { Background, Panel } from "reactflow";
 import dagre from "dagre";
-import { usePlayground, PlaygroundPresets } from "../context/Playground";
+import { usePlayground } from "../context/Playground";
+import PlaybackControls from "./PlaybackControls";
+import PresetSelector from "./PresetSelector";
 import { nodeTypes } from "./nodes";
-
-const nodeWidth = 90;
-const nodeHeight = 36;
 
 const dagreGraph = new dagre.graphlib.Graph();
 dagreGraph.setDefaultEdgeLabel(() => ({}));
 
 const Playground = () => {
-  const { nodes, edges, loadPreset } = usePlayground();
+  const { nodes, edges } = usePlayground();
   return (
-    <>
-      <select
-        onChange={(e) => {
-          loadPreset(parseInt(e.currentTarget.value) as PlaygroundPresets);
-        }}
-      >
-        <option>Pick preset</option>
-        <option value={PlaygroundPresets.BasicExpression}>Basic Example</option>
-        <option value={PlaygroundPresets.Neuron}>Neuron</option>
-        <option value={PlaygroundPresets.BasicMLP}>Basic MLP</option>
-      </select>
-      <ReactFlow fitView nodeTypes={nodeTypes} nodes={nodes} edges={edges}>
-        <Background />
-      </ReactFlow>
-    </>
+    <ReactFlow fitView nodeTypes={nodeTypes} nodes={nodes} edges={edges}>
+      <Panel position="top-right">
+        <PresetSelector />
+      </Panel>
+      {nodes.length !== 0 ? (
+        <Panel position="top-left">
+          <PlaybackControls />
+        </Panel>
+      ) : null}
+      <Background />
+    </ReactFlow>
   );
 };
 

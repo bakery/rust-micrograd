@@ -24,14 +24,12 @@ export default memo((props: ScalarNodeProps) => {
 
   return (
     <div
-      className={
+      className={`overflow-hidden text-center rounded-lg bg-white px-4 py-5 shadow sm:p-6 ${
         data.isComputed && showValue
           ? "afnimate__animated animate__heartBeat"
           : ""
-      }
+      }`}
       style={{
-        border: "solid 1px #ccc",
-        padding: "10px",
         opacity: data.current ? 1.0 : 0.25,
       }}
     >
@@ -40,25 +38,28 @@ export default memo((props: ScalarNodeProps) => {
           type="target"
           position={Position.Left}
           style={{ background: "#555" }}
-          onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
         />
       ) : null}
-      <div>
-        {/* <strong>{`${data.label}${data.isComputed ? "[comp]" : ""}`}</strong>:{" "} */}
-        {showValue ? prettyNumber(data.value) : "?"}
-        {data.showGradient ? (
-          <>
-            <br />
-            <strong>grad</strong>: {prettyNumber(data.grad)}
-          </>
-        ) : null}
+      <div className="relative">
+        <div className="text-indigo-600 pl-0.5 top-0 left-0 fixed font-medium text-gray-900 text-sm">
+          {data.label}
+        </div>
+        <dd className="mt-1 text-3xl font-semibold text-center tracking-tight text-gray-900">
+          {showValue ? prettyNumber(data.value) : "?"}
+        </dd>
+        <dt
+          style={{ opacity: data.showGradient ? 1.0 : 0.0 }}
+          className="truncate text-sm font-medium text-gray-500"
+        >
+          {`grad: ${prettyNumber(data.grad)}`}
+        </dt>
       </div>
       <Handle
         type="source"
         position={Position.Right}
         id="b"
-        style={{ bottom: 10, top: "auto", background: "#555" }}
+        style={{ background: "#555" }}
         isConnectable={isConnectable}
       />
     </div>

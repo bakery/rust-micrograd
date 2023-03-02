@@ -52,8 +52,6 @@ export const getNodesAndEdges = (
 
   const { nodes, edges } = _getNodesAndEdges(state);
 
-  console.log(">>>>>>>>>>>>>>>>> nodes are", nodes);
-
   const mapEdge = ([from, to]: [Value, Value]) => ({
     id: `${from.id}-${to.id}`,
     source: `${from.id}`,
@@ -69,7 +67,7 @@ export const getNodesAndEdges = (
       position: { x: 0, y: 0 },
       type: "scalar",
       data: {
-        label: n.label.length < 5 ? n.label : "...",
+        label: n.label.length < 10 ? n.label : `${n.label.substring(0, 7)}...`,
         value: n.data,
         grad: n.grad,
         isComputed: n.children.length !== 0,
@@ -130,12 +128,12 @@ export const getNodesAndEdges = (
   return {
     edges: es.map((e) => e),
     nodes: ns.map((n) => {
-      console.log(
-        ">>>>>>>>>>>>>> checking on node",
-        n,
-        "with DEPTH",
-        depthToUse
-      );
+      // console.log(
+      //   ">>>>>>>>>>>>>> checking on node",
+      //   n,
+      //   "with DEPTH",
+      //   depthToUse
+      // );
 
       return Object.assign(n, {
         data: Object.assign(
@@ -158,8 +156,8 @@ export const getNodesAndEdges = (
   };
 };
 
-const nodeWidth = 90;
-const nodeHeight = 36;
+const nodeWidth = 70;
+const nodeHeight = 70;
 
 const dagreGraph = new dagre.graphlib.Graph();
 dagreGraph.setDefaultEdgeLabel(() => ({}));
@@ -173,7 +171,12 @@ const getLayoutedElements = (
   let depths = new Set();
   let maxDepth = 0;
 
-  dagreGraph.setGraph({ rankdir: direction });
+  dagreGraph.setGraph({
+    rankdir: direction,
+    nodesep: 50,
+    edgesep: 40,
+    ranksep: 100,
+  });
 
   nodes.forEach((node) => {
     dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });

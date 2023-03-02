@@ -13,18 +13,18 @@ interface OperationNodeProps {
 }
 
 const opTypeToString = (op: string | { Pow: number }): string => {
-  console.log(">>>>>>>>>>>>>>>> op iz", op);
+  // console.log(">>>>>>>>>>>>>>>> op iz", op);
   switch (op) {
     case "Add":
-      return "+";
+      return "➕";
     case "Multiply":
-      return "*";
+      return "✖️";
     case "Tanh":
       return "tanh";
   }
 
   if (typeof op.Pow !== "undefined") {
-    return "^2";
+    return `^${op.Pow}`;
   }
 
   return "n/a";
@@ -34,27 +34,22 @@ export default memo((props: OperationNodeProps) => {
   const { data, isConnectable } = props;
   return (
     <div
-      className={
+      className={`overflow-hidden text-center rounded-full ring-2 ring-gray-300 bg-white px-3 py-2  shadow ${
         data.current
           ? "animate__animated animate__heartBeat animate__infinite	infinite animate__delay-2s"
           : ""
-      }
-      style={{
-        backgroundColor: "yellow",
-        border: "solid 1px #ccc",
-        padding: "5px 10px",
-      }}
+      }`}
+      style={{ opacity: data.current ? 1.0 : 0.25 }}
     >
       <Handle
         type="target"
         position={Position.Left}
         style={{ background: "#555" }}
-        onConnect={(params) => console.log("handle onConnect", params)}
         isConnectable={isConnectable}
       />
-      <div>
-        <strong>{opTypeToString(data.operation)}</strong>
-      </div>
+      <dd className="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
+        {opTypeToString(data.operation)}
+      </dd>
       <Handle
         type="source"
         position={Position.Right}
