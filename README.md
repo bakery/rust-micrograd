@@ -34,7 +34,3 @@ let mut loss = net.loss(vec![0.5]);
 // backprop
 loss.backward();
 ```
-
-### Web preview
-
-Check playground example [here](https://rust-micrograd.herokuapp.com/)
